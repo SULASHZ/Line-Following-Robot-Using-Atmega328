@@ -1,0 +1,221 @@
+#define F_CPU 16000000UL
+#include <avr/interrupt.h>
+#include <util/delay.h>
+#include <avr/io.h>
+
+#define pin1 PD6
+#define pin2 PD5
+
+volatile uint8_t right=0;
+volatile uint8_t mid=0;
+volatile uint8_t left=0;
+volatile uint8_t obs=0;
+volatile uint8_t sw1;
+volatile uint8_t sw2;
+int mode=-1;
+
+void pwm(uint8_t a,uint8_t b){
+	TCCR0A|=(1<<COM0A1)|(1<<COM0B1)|(1<< WGM01)|(1<< WGM00);
+	TCCR0B|=(1<< CS01)|(1<< CS00);
+	OCR0A=a;
+	OCR0B=b;
+	DDRD|=(1<<pin1)|(1<<pin2);
+}
+
+void fun(){
+	DDRD&=~((1<<PD0)|(1<<PD1)|(1<<PD2)|(1<<PD3)|(1<<PD4)|(1<<PD7));
+	DDRB|=(1<<PB0)|(1<<PB1)|(1<<PB2)|(1<<PB3)|(1<<PB4);
+	DDRC|=(1<<PC5)|(1<<PC4);
+	PORTD|=(1<<PD4)|(1<<PD7);
+	
+	
+	PCICR|=(1<< PCIE2);
+	PCMSK2|=(1<<PCINT16)|(1<<PCINT17)|(1<< PCINT18)|(1<<PCINT19)|(1<<PCINT20)|(1<<PCINT23);
+	sei();
+	
+}
+
+ISR(PCINT2_vect){
+	right=PIND&(1<<PD0);
+	mid=PIND&(1<<PD1);
+	left=PIND&(1<<PD2);
+	obs=!(PIND&(1<<PD3));
+	sw1=!(PIND&(1<<PD4));
+	sw2=!(PIND&(1<<PD7));
+	if(sw1)
+	{
+		mode=1;
+		
+	}
+	else if(sw2)
+	{
+		mode=0;
+	}
+}
+
+void obstacle(){
+	
+	if(obs==0)
+	{       
+                  if(right&&mid){
+                        pwm(255,255);
+			PORTB&=~(1<<PB0);
+			PORTB|=(1<<PB1);
+			PORTB&=~(1<<PB2);
+			PORTB|=(1<<PB3);
+                        _delay_ms(100);
+                        PORTB=0x00;
+			pwm(153,102);
+			PORTB|=(1<<PB0)|(1<<PB3);
+			PORTB&=~((1<<PB1)|(1<<PB2));
+			
+		}
+                else if(left&&mid){
+                        pwm(255,255);
+			PORTB&=~(1<<PB0);
+			PORTB|=(1<<PB1);
+			PORTB&=~(1<<PB2);
+			PORTB|=(1<<PB3);
+                        _delay_ms(100);
+                        PORTB=0x00;
+			pwm(102,153);
+			PORTB|=(1<<PB2)|(1<<PB1);
+			PORTB&=~((1<<PB0)|(1<<PB3));
+		}
+		
+		else if(right){
+                        pwm(255,255);
+			PORTB&=~(1<<PB0);
+			PORTB|=(1<<PB1);
+			PORTB&=~(1<<PB2);
+			PORTB|=(1<<PB3);
+                        _delay_ms(100);
+                        PORTB=0x00;
+			pwm(153,102);
+			PORTB|=(1<<PB0)|(1<<PB3);
+			PORTB&=~((1<<PB1)|(1<<PB2));
+			
+		}
+		else if(left){
+                        pwm(255,255);
+			PORTB&=~(1<<PB0);
+			PORTB|=(1<<PB1);
+			PORTB&=~(1<<PB2);
+			PORTB|=(1<<PB3);
+                        _delay_ms(100);
+                        PORTB=0x00;
+			pwm(102,153);
+			PORTB|=(1<<PB2)|(1<<PB1);
+			PORTB&=~((1<<PB0)|(1<<PB3));
+		}
+		else if(mid){
+			pwm(255,255);
+			PORTB|=(1<<PB0);
+			PORTB&=~(1<<PB1);
+			PORTB|=(1<<PB2);
+			PORTB&=~(1<<PB3);
+		}
+              
+		
+		else{
+			PORTB=0x00;
+		}
+	}
+	else{
+		PORTB&=~0x0F;
+		PORTB|=(1<<PB4);
+		_delay_ms(200);
+		PORTB&=~(1<<PB4);
+		_delay_ms(200);
+	}
+	
+}
+
+void line(){
+        if(right&&mid){
+                pwm(255,255);
+		PORTB&=~(1<<PB0);
+		PORTB|=(1<<PB1);
+		PORTB&=~(1<<PB2);
+		PORTB|=(1<<PB3);
+                _delay_ms(100);
+                PORTB=0x00;
+		pwm(153,102);
+		PORTB|=(1<<PB0)|(1<<PB3);
+		PORTB&=~((1<<PB1)|(1<<PB2));
+			
+	}
+        else if(left&&mid){
+                pwm(255,255);
+		PORTB&=~(1<<PB0);
+		PORTB|=(1<<PB1);
+		PORTB&=~(1<<PB2);
+		PORTB|=(1<<PB3);
+                _delay_ms(100);
+                PORTB=0x00;
+		pwm(102,153);
+		PORTB|=(1<<PB2)|(1<<PB1);
+		PORTB&=~((1<<PB0)|(1<<PB3));
+	}
+	
+	else if(right){
+                pwm(255,255);
+		PORTB&=~(1<<PB0);
+		PORTB|=(1<<PB1);
+		PORTB&=~(1<<PB2);
+		PORTB|=(1<<PB3);
+                _delay_ms(100);
+                PORTB=0x00;
+		pwm(153,102);
+		PORTB|=(1<<PB0)|(1<<PB3);
+		PORTB&=~((1<<PB1)|(1<<PB2));
+		
+	}
+	else if(left){
+                pwm(255,255);
+		PORTB&=~(1<<PB0);
+		PORTB|=(1<<PB1);
+		PORTB&=~(1<<PB2);
+		PORTB|=(1<<PB3);
+                _delay_ms(100);
+                PORTB=0x00;
+		pwm(102,153);
+		PORTB|=(1<<PB2)|(1<<PB1);
+		PORTB&=~((1<<PB0)|(1<<PB3));
+	}
+	else if(mid){
+		pwm(255,255);
+		PORTB|=(1<<PB0);
+		PORTB&=~(1<<PB1);
+		PORTB|=(1<<PB2);
+		PORTB&=~(1<<PB3);
+	}
+        
+	
+	else{
+		PORTB=0x00;
+	}
+}
+
+
+int main(void)
+{ 
+	fun();
+	while (1){
+		if(mode==1)
+		{   PORTC&=~(1<<PC4);
+			PORTC|=(1<<PC5);
+			obstacle();
+		}
+		else if(mode==0)
+		{   PORTC&=~(1<<PC5);
+			PORTC|=(1<<PC4);
+			line();
+		}
+		else
+		{   PORTC=0x00;
+			PORTB=0x00;
+			
+		}
+	}
+}
